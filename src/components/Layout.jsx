@@ -8,6 +8,7 @@ export default function Layout({ children }) {
   const [isMobile, setIsMobile] = useState(false);
   const [schoolInfo, setSchoolInfo] = useState({ name: "Loading...", code: "" });
   const [userName, setUserName] = useState("");
+  const [hoveredItem, setHoveredItem] = useState(null);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -45,7 +46,6 @@ export default function Layout({ children }) {
             code: user.school.schoolCode
           });
         } else {
-          // Fallback to localStorage if school not in profile
           const schoolName = localStorage.getItem("schoolName");
           const schoolCode = localStorage.getItem("schoolCode");
           if (schoolName) {
@@ -54,7 +54,6 @@ export default function Layout({ children }) {
         }
       } catch (error) {
         console.error("Error fetching user info:", error);
-        // Fallback to localStorage
         const schoolName = localStorage.getItem("schoolName");
         const schoolCode = localStorage.getItem("schoolCode");
         if (schoolName) {
@@ -82,46 +81,70 @@ export default function Layout({ children }) {
     {
       title: "Overview",
       items: [
-        { path: "/dashboard", name: "Dashboard", icon: "📊" },
-        { path: "/profile", name: "My Profile", icon: "👤" },
+        { path: "/dashboard", name: "Dashboard", icon: "📊", description: "View inventory summary and statistics" },
+        { path: "/profile", name: "My Profile", icon: "👤", description: "Manage your account information" },
       ]
     },
     {
       title: "Inventory Setup",
       items: [
-        { path: "/categories", name: "Categories", icon: "📂" },
-        { path: "/items", name: "Items", icon: "🛒" },
+        { path: "/categories", name: "Categories", icon: "📂", description: "Organize items by categories" },
+        { path: "/items", name: "Items", icon: "🛒", description: "Manage all inventory items" },
       ]
     },
     {
       title: "Stock Operations",
       items: [
-        { path: "/stock", name: "Stock Management", icon: "📦" },
-        { path: "/borrowed", name: "Borrowed Items", icon: "📋" },
+        { path: "/stock", name: "Stock Management", icon: "📦", description: "Track IN, OUT, BORROW, RETURN" },
+        { path: "/borrowed", name: "Borrowed Items", icon: "📋", description: "View and manage borrowed items" },
       ]
     },
     {
       title: "Asset Management",
       items: [
-        { path: "/assets", name: "Assets", icon: "🏗️" },
-        { path: "/tracked-assets", name: "Asset Tracking", icon: "💻" },
+        { path: "/assets", name: "Assets", icon: "🏗️", description: "Manage school assets and equipment" },
+        { path: "/tracked-assets", name: "Asset Tracking", icon: "💻", description: "Track computers and electronics" },
       ]
     },
     {
       title: "School Feeding",
       items: [
-        { path: "/feeding", name: "Feeding Records", icon: "🍽️" },
+        { path: "/feeding", name: "Feeding Records", icon: "🍽️", description: "Record food receipts and usage" },
       ]
     },
     {
       title: "Facility Management",
       items: [
-        { path: "/laboratory", name: "Laboratory", icon: "🔬" },
-        { path: "/library", name: "Library", icon: "📚" },
-        { path: "/cleaning-supplies", name: "Cleaning Supplies", icon: "🧹" },
+        { path: "/laboratory", name: "Laboratory", icon: "🔬", description: "Manage lab equipment and chemicals" },
+        { path: "/library", name: "Library", icon: "📚", description: "Manage library books collection" },
+        { path: "/cleaning-supplies", name: "Cleaning Supplies", icon: "🧹", description: "Track cleaning inventory" },
       ]
     }
   ];
+
+  // Tooltip component for collapsed sidebar
+  const Tooltip = ({ item, x, y }) => {
+    if (!item) return null;
+    return (
+      <div 
+        className="fixed z-50 bg-gray-900 text-white px-3 py-2 rounded-lg shadow-2xl pointer-events-none animate-fade-in"
+        style={{ 
+          left: x + 10, 
+          top: y - 20,
+          transform: 'translateY(-100%)',
+          minWidth: '180px',
+          maxWidth: '250px'
+        }}
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-lg">{item.icon}</span>
+          <span className="font-semibold text-sm">{item.name}</span>
+        </div>
+        <div className="text-xs text-gray-300 mt-1 leading-relaxed">{item.description}</div>
+        <div className="absolute -bottom-1 left-4 w-2 h-2 bg-gray-900 rotate-45"></div>
+      </div>
+    );
+  };
 
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden">
@@ -131,6 +154,7 @@ export default function Layout({ children }) {
         <button
           onClick={() => setIsMobileMenuOpen(true)}
           className="fixed top-4 left-4 z-20 p-2 bg-gray-900 rounded-lg text-white shadow-lg md:hidden"
+          aria-label="Open menu"
         >
           ☰
         </button>
@@ -166,7 +190,8 @@ export default function Layout({ children }) {
             {!isMobile && (
               <button 
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
-                className="text-gray-400 hover:text-white transition-colors"
+                className="text-gray-400 hover:text-white transition-colors p-1 rounded hover:bg-gray-800"
+                aria-label={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
               >
                 {isSidebarOpen ? "◀" : "▶"}
               </button>
@@ -175,11 +200,19 @@ export default function Layout({ children }) {
               <button 
                 onClick={() => setIsMobileMenuOpen(false)} 
                 className="text-gray-400 hover:text-white"
+                aria-label="Close menu"
               >
                 ✕
               </button>
             )}
           </div>
+          
+          {/* Hint for collapsed sidebar */}
+          {!isSidebarOpen && !isMobile && (
+            <div className="mt-2 text-center">
+              <p className="text-[10px] text-gray-500">Hover icons for names</p>
+            </div>
+          )}
         </div>
 
         {/* Welcome User Section (when sidebar is open) */}
@@ -202,19 +235,40 @@ export default function Layout({ children }) {
                 </div>
               )}
               {group.items.map((item) => (
-                <Link
+                <div
                   key={item.path}
-                  to={item.path}
-                  onClick={closeMenu}
-                  className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-lg transition-colors ${
-                    location.pathname === item.path
-                      ? "bg-gray-800 text-white"
-                      : "text-gray-300 hover:bg-gray-800 hover:text-white"
-                  }`}
+                  className="relative"
+                  onMouseEnter={(e) => {
+                    if (!isSidebarOpen && !isMobile) {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      setHoveredItem({
+                        ...item,
+                        x: rect.right,
+                        y: rect.top + rect.height / 2
+                      });
+                    }
+                  }}
+                  onMouseLeave={() => setHoveredItem(null)}
                 >
-                  <span className="text-xl min-w-[28px]">{item.icon}</span>
-                  {isSidebarOpen && <span>{item.name}</span>}
-                </Link>
+                  <Link
+                    to={item.path}
+                    onClick={closeMenu}
+                    className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-lg transition-colors ${
+                      location.pathname === item.path
+                        ? "bg-gray-800 text-white"
+                        : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                    }`}
+                    title={!isSidebarOpen ? item.name : undefined}
+                  >
+                    <span className="text-xl min-w-[28px]" aria-label={item.name}>{item.icon}</span>
+                    {isSidebarOpen && (
+                      <div className="flex-1 min-w-0">
+                        <span className="block text-sm font-medium truncate">{item.name}</span>
+                        <span className="text-xs text-gray-500 truncate block">{item.description}</span>
+                      </div>
+                    )}
+                  </Link>
+                </div>
               ))}
             </div>
           ))}
@@ -233,7 +287,7 @@ export default function Layout({ children }) {
                   navigator.clipboard.writeText(schoolInfo.code);
                   alert("School code copied!");
                 }}
-                className="text-gray-500 hover:text-gray-300 transition-colors"
+                className="text-gray-500 hover:text-gray-300 transition-colors p-1 rounded hover:bg-gray-700"
                 title="Copy school code"
               >
                 📋
@@ -253,6 +307,11 @@ export default function Layout({ children }) {
           </button>
         </div>
       </div>
+
+      {/* Tooltip for collapsed sidebar */}
+      {hoveredItem && (
+        <Tooltip item={hoveredItem} x={hoveredItem.x} y={hoveredItem.y} />
+      )}
 
       {/* Mobile Overlay */}
       {isMobile && isMobileMenuOpen && (
@@ -280,6 +339,22 @@ export default function Layout({ children }) {
         )}
         <div className="p-4 md:p-6">{children}</div>
       </div>
+
+      <style>{`
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(-100%);
+          }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.2s ease-out forwards;
+        }
+      `}</style>
     </div>
   );
 }
