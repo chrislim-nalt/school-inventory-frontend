@@ -8,7 +8,6 @@ export default function Layout({ children }) {
   const [isMobile, setIsMobile] = useState(false);
   const [schoolInfo, setSchoolInfo] = useState({ name: "Loading...", code: "" });
   const [userName, setUserName] = useState("");
-  const [hoveredItem, setHoveredItem] = useState(null);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -122,30 +121,6 @@ export default function Layout({ children }) {
     }
   ];
 
-  // Tooltip component for collapsed sidebar
-  const Tooltip = ({ item, x, y }) => {
-    if (!item) return null;
-    return (
-      <div 
-        className="fixed z-50 bg-gray-900 text-white px-3 py-2 rounded-lg shadow-2xl pointer-events-none animate-fade-in"
-        style={{ 
-          left: x + 10, 
-          top: y - 20,
-          transform: 'translateY(-100%)',
-          minWidth: '180px',
-          maxWidth: '250px'
-        }}
-      >
-        <div className="flex items-center gap-2">
-          <span className="text-lg">{item.icon}</span>
-          <span className="font-semibold text-sm">{item.name}</span>
-        </div>
-        <div className="text-xs text-gray-300 mt-1 leading-relaxed">{item.description}</div>
-        <div className="absolute -bottom-1 left-4 w-2 h-2 bg-gray-900 rotate-45"></div>
-      </div>
-    );
-  };
-
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden">
       
@@ -209,8 +184,8 @@ export default function Layout({ children }) {
           
           {/* Hint for collapsed sidebar */}
           {!isSidebarOpen && !isMobile && (
-            <div className="mt-2 text-center">
-              <p className="text-[10px] text-gray-500">Hover icons for names</p>
+            <div className="mt-3 text-center bg-gray-800 rounded-lg py-1.5">
+              <p className="text-xs text-gray-400">💡 Hover over icons</p>
             </div>
           )}
         </div>
@@ -238,17 +213,6 @@ export default function Layout({ children }) {
                 <div
                   key={item.path}
                   className="relative"
-                  onMouseEnter={(e) => {
-                    if (!isSidebarOpen && !isMobile) {
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      setHoveredItem({
-                        ...item,
-                        x: rect.right,
-                        y: rect.top + rect.height / 2
-                      });
-                    }
-                  }}
-                  onMouseLeave={() => setHoveredItem(null)}
                 >
                   <Link
                     to={item.path}
@@ -258,16 +222,29 @@ export default function Layout({ children }) {
                         ? "bg-gray-800 text-white"
                         : "text-gray-300 hover:bg-gray-800 hover:text-white"
                     }`}
-                    title={!isSidebarOpen ? item.name : undefined}
                   >
                     <span className="text-xl min-w-[28px]" aria-label={item.name}>{item.icon}</span>
-                    {isSidebarOpen && (
+                    {isSidebarOpen ? (
                       <div className="flex-1 min-w-0">
                         <span className="block text-sm font-medium truncate">{item.name}</span>
                         <span className="text-xs text-gray-500 truncate block">{item.description}</span>
                       </div>
-                    )}
+                    ) : null}
                   </Link>
+                  
+                  {/* Tooltip for collapsed sidebar - positioned absolutely */}
+                  {!isSidebarOpen && !isMobile && (
+                    <div className="absolute left-full top-1/2 transform -translate-y-1/2 ml-2 px-3 py-2 bg-gray-800 text-white text-sm rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none min-w-[180px]">
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-2">
+                          <span className="text-base">{item.icon}</span>
+                          <span className="font-semibold text-sm">{item.name}</span>
+                        </div>
+                        <span className="text-xs text-gray-300 mt-1">{item.description}</span>
+                      </div>
+                      <div className="absolute left-0 top-1/2 transform -translate-x-1 -translate-y-1/2 w-2 h-2 bg-gray-800 rotate-45"></div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -308,11 +285,6 @@ export default function Layout({ children }) {
         </div>
       </div>
 
-      {/* Tooltip for collapsed sidebar */}
-      {hoveredItem && (
-        <Tooltip item={hoveredItem} x={hoveredItem.x} y={hoveredItem.y} />
-      )}
-
       {/* Mobile Overlay */}
       {isMobile && isMobileMenuOpen && (
         <div 
@@ -341,18 +313,26 @@ export default function Layout({ children }) {
       </div>
 
       <style>{`
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(-100%);
-          }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+          width: 6px;
+          height: 6px;
         }
-        .animate-fade-in {
-          animation: fade-in 0.2s ease-out forwards;
+        ::-webkit-scrollbar-track {
+          background: #1f2937;
+        }
+        ::-webkit-scrollbar-thumb {
+          background: #4b5563;
+          border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+          background: #6b7280;
+        }
+        
+        /* Ensure group-hover works */
+        .group-hover\\:opacity-100:hover {
+          opacity: 1 !important;
+          visibility: visible !important;
         }
       `}</style>
     </div>
