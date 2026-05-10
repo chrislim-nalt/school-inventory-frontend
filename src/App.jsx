@@ -19,6 +19,7 @@ import FeedingRecords from "./components/pages/FeedingRecords";
 
 // Super Admin Imports
 import AdminLayout from "./components/pages/admin/AdminLayout";
+import SetupSuperAdmin from "./components/pages/SetupSuperAdmin";
 import AdminDashboard from "./components/pages/admin/AdminDashboard";
 import AdminSchools from "./components/pages/admin/AdminSchools";
 import AdminUsers from "./components/pages/admin/AdminUsers";
@@ -30,6 +31,7 @@ function App() {
       <Routes>
         {/* PUBLIC ROUTES */}
         <Route path="/" element={<Login />} />
+        <Route path="/setup" element={<SetupSuperAdmin />} />
         <Route path="/admin-login" element={<AdminLogin />} />
         <Route path="/register" element={<Register />} />
 
