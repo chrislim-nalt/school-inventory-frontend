@@ -454,14 +454,14 @@ export default function Assets() {
                           className="p-1 rounded hover:bg-indigo-50 text-indigo-600 text-sm transition-all"
                           title="Edit"
                         >
-                          Edit
+                          ✏️
                         </button>
                         <button 
                           onClick={() => handleDelete(asset._id)} 
                           className="p-1 rounded hover:bg-rose-50 text-rose-500 text-sm transition-all"
                           title="Delete"
                         >
-                          Delete
+                          🗑️
                         </button>
                       </div>
                     </td>

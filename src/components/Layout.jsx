@@ -89,8 +89,8 @@ export default function Layout({ children }) {
     {
       title: "Overview",
       items: [
-        { path: "/dashboard", name: "Dashboard", icon: "📊", description: "View inventory summary" },
         { path: "/profile", name: "My Profile", icon: "👤", description: "Manage your account" },
+        { path: "/dashboard", name: "Dashboard", icon: "📊", description: "View inventory summary" },
       ],
     },
     {
@@ -111,7 +111,7 @@ export default function Layout({ children }) {
       title: "Asset Management",
       items: [
         { path: "/assets", name: "Assets", icon: "🏗️", description: "School assets" },
-        { path: "/tracked-assets", name: "Asset Tracking", icon: "💻", description: "Track electronics" },
+        
       ],
     },
     {
@@ -123,6 +123,7 @@ export default function Layout({ children }) {
     {
       title: "Facility Management",
       items: [
+        { path: "/tracked-assets", name: "Computer Lab", icon: "💻", description: "Computer Tracking" },
         { path: "/laboratory", name: "Laboratory", icon: "🔬", description: "Lab equipment" },
         { path: "/library", name: "Library", icon: "📚", description: "Books collection" },
         { path: "/cleaning-supplies", name: "Cleaning Supplies", icon: "🧹", description: "Cleaning inventory" },
