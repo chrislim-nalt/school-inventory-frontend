@@ -7,6 +7,7 @@ export default function AdminUsers() {
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
     const [message, setMessage] = useState({ type: "", text: "" });
+    const [showCredentials, setShowCredentials] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(10);
     const [form, setForm] = useState({
@@ -48,14 +49,23 @@ export default function AdminUsers() {
 
         setLoading(true);
         try {
-            await API.post("/admin/users", form);
-            setMessage({ type: "success", text: "User created successfully!" });
+            const response = await API.post("/admin/users", form);
+            
+            // Show credentials modal
+            if (response.data.credentials) {
+                setShowCredentials(response.data.credentials);
+            }
+            
+            setMessage({ type: "success", text: response.data.message || "User created successfully!" });
             setShowForm(false);
             setForm({ name: "", email: "", password: "", schoolId: "", role: "staff" });
             fetchData();
             setTimeout(() => setMessage({ type: "", text: "" }), 3000);
         } catch (error) {
-            setMessage({ type: "error", text: error.response?.data?.message || "Failed to create user" });
+            setMessage({ 
+                type: "error", 
+                text: error.response?.data?.message || "Failed to create user" 
+            });
         } finally {
             setLoading(false);
         }
@@ -151,6 +161,66 @@ export default function AdminUsers() {
                 </div>
             )}
 
+            {/* Credentials Modal */}
+            {showCredentials && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+                        <div className="bg-gradient-to-r from-emerald-500 to-teal-500 px-6 py-4">
+                            <div className="flex items-center gap-2">
+                                <span className="text-2xl">🎉</span>
+                                <h3 className="text-lg font-bold text-white">User Created Successfully!</h3>
+                            </div>
+                        </div>
+                        <div className="p-6">
+                            <p className="text-sm text-slate-600 mb-4">
+                                Please save these credentials and share them securely with the user:
+                            </p>
+                            <div className="bg-slate-50 rounded-xl p-4 space-y-3">
+                                <div className="flex justify-between items-center border-b border-slate-200 pb-2">
+                                    <span className="text-xs font-semibold text-slate-500">NAME:</span>
+                                    <span className="text-sm font-medium text-slate-800">{showCredentials.name}</span>
+                                </div>
+                                <div className="flex justify-between items-center border-b border-slate-200 pb-2">
+                                    <span className="text-xs font-semibold text-slate-500">EMAIL:</span>
+                                    <span className="text-sm font-medium text-slate-800">{showCredentials.email}</span>
+                                </div>
+                                <div className="flex justify-between items-center border-b border-slate-200 pb-2">
+                                    <span className="text-xs font-semibold text-slate-500">PASSWORD:</span>
+                                    <code className="text-sm font-mono font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">
+                                        {showCredentials.password}
+                                    </code>
+                                </div>
+                                <div className="flex justify-between items-center border-b border-slate-200 pb-2">
+                                    <span className="text-xs font-semibold text-slate-500">SCHOOL:</span>
+                                    <span className="text-sm text-slate-800">{showCredentials.school} ({showCredentials.schoolCode})</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-xs font-semibold text-slate-500">ROLE:</span>
+                                    <span className="text-sm capitalize">{showCredentials.role}</span>
+                                </div>
+                            </div>
+                            <div className="mt-6 flex gap-3">
+                                <button
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(`Email: ${showCredentials.email}\nPassword: ${showCredentials.password}\nLogin: ${showCredentials.loginUrl}`);
+                                        setMessage({ type: "success", text: "Credentials copied to clipboard!" });
+                                    }}
+                                    className="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white py-2 rounded-lg font-semibold text-sm transition"
+                                >
+                                    📋 Copy Credentials
+                                </button>
+                                <button
+                                    onClick={() => setShowCredentials(null)}
+                                    className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2 rounded-lg font-semibold text-sm transition"
+                                >
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Header */}
             <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl shadow-xl">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-full blur-3xl"></div>
@@ -214,6 +284,7 @@ export default function AdminUsers() {
                                     className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all outline-none"
                                     placeholder="Leave empty to auto-generate"
                                 />
+                                <p className="text-xs text-slate-400 mt-1">Auto-generates strong password if left empty</p>
                             </div>
                             <div>
                                 <label className="block text-xs font-semibold text-slate-600 mb-1">School *</label>
@@ -245,8 +316,8 @@ export default function AdminUsers() {
                             </div>
                         </div>
                         <div className="flex gap-3 mt-5 pt-3 border-t border-slate-100">
-                            <button type="submit" disabled={loading} className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-500 text-white py-2 rounded-lg font-semibold text-sm hover:shadow-lg transition-all">
-                                Create User
+                            <button type="submit" disabled={loading} className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-500 text-white py-2 rounded-lg font-semibold text-sm hover:shadow-lg transition-all disabled:opacity-50">
+                                {loading ? "Creating..." : "Create User"}
                             </button>
                             <button type="button" onClick={() => setShowForm(false)} className="flex-1 bg-slate-100 text-slate-700 py-2 rounded-lg font-semibold text-sm hover:bg-slate-200 transition-all">
                                 Cancel
@@ -328,16 +399,18 @@ export default function AdminUsers() {
                                                 </span>
                                             </td>
                                             <td className="px-4 py-2.5 text-center">
-                                                <button
-                                                    onClick={() => handleToggleStatus(user._id, user.isActive)}
-                                                    className={`px-3 py-1 rounded-lg text-xs font-medium transition ${
-                                                        user.isActive 
-                                                            ? "bg-rose-600 hover:bg-rose-700 text-white" 
-                                                            : "bg-emerald-600 hover:bg-emerald-700 text-white"
-                                                    }`}
-                                                >
-                                                    {user.isActive ? "Deactivate" : "Activate"}
-                                                </button>
+                                                <div className="flex gap-1 justify-center">
+                                                    <button
+                                                        onClick={() => handleToggleStatus(user._id, user.isActive)}
+                                                        className={`px-3 py-1 rounded-lg text-xs font-medium transition ${
+                                                            user.isActive 
+                                                                ? "bg-rose-600 hover:bg-rose-700 text-white" 
+                                                                : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                                                        }`}
+                                                    >
+                                                        {user.isActive ? "Deactivate" : "Activate"}
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}
@@ -369,7 +442,12 @@ export default function AdminUsers() {
                     from { transform: translateX(100%); opacity: 0; }
                     to { transform: translateX(0); opacity: 1; }
                 }
+                @keyframes fade-in {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
                 .animate-slide-in { animation: slide-in 0.3s ease-out; }
+                .animate-fade-in { animation: fade-in 0.2s ease-out; }
             `}</style>
         </div>
     );
