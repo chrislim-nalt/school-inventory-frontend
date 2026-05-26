@@ -37,24 +37,48 @@ export default function DownloadButton({
   const handle = async (type) => {
     setLoading(type);
     setOpen(false);
+    
     try {
       if (type === "pdf") {
         if (useItemsPDF) {
-          const { exportItemsToPDF } = await import("./services/exportService");
-          exportItemsToPDF(items.length ? items : data);
+          // Make sure we have items to export
+          const itemsToExport = items.length ? items : data;
+          if (!itemsToExport || itemsToExport.length === 0) {
+            console.warn("No items available for PDF export");
+            setLoading(null);
+            return;
+          }
+          const { exportItemsToPDF } = await import("../services/exportService");
+          await exportItemsToPDF(itemsToExport);
         } else {
-          const { exportToPDF } = await import("./services/exportService");
+          if (!data || data.length === 0) {
+            console.warn("No data available for PDF export");
+            setLoading(null);
+            return;
+          }
+          const { exportToPDF } = await import("../services/exportService");
           exportToPDF(data, columns, title, filename);
         }
       } else if (type === "excel") {
-        const { exportToExcel } = await import("./services/exportService");
+        if (!data || data.length === 0) {
+          console.warn("No data available for Excel export");
+          setLoading(null);
+          return;
+        }
+        const { exportToExcel } = await import("../services/exportService");
         exportToExcel(data, columns, filename);
       } else if (type === "csv") {
-        const { exportToCSV } = await import("./services/exportService");
+        if (!data || data.length === 0) {
+          console.warn("No data available for CSV export");
+          setLoading(null);
+          return;
+        }
+        const { exportToCSV } = await import("../services/exportService");
         exportToCSV(data, columns, filename);
       }
     } catch (err) {
       console.error("Export failed:", err);
+      alert(`Export failed: ${err.message || "Unknown error"}`);
     } finally {
       setLoading(null);
     }
