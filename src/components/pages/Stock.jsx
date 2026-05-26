@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getItems } from "../services/itemService";
+import { getCategories } from "../services/categoryService";
 import {
   createTransaction,
   getTransactions,
@@ -9,6 +10,7 @@ import {
 
 export default function Stock() {
   const [items, setItems] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -17,8 +19,13 @@ export default function Stock() {
   const [editingId, setEditingId] = useState(null);
   const [filterItem, setFilterItem] = useState("");
   const [filterType, setFilterType] = useState("ALL");
+  const [filterCategory, setFilterCategory] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(25);
+  
+  // For category-based item selection
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [filteredItemsByCategory, setFilteredItemsByCategory] = useState([]);
 
   const [form, setForm] = useState({
     item: "",
@@ -36,11 +43,13 @@ export default function Stock() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [itemRes, transRes] = await Promise.all([
+      const [itemRes, transRes, catRes] = await Promise.all([
         getItems(),
-        getTransactions()
+        getTransactions(),
+        getCategories()
       ]);
       setItems(itemRes.data || []);
+      setCategories(catRes.data || []);
       
       let transactionsData = transRes.data || [];
       if (filterItem) {
@@ -48,6 +57,10 @@ export default function Stock() {
       }
       if (filterType !== "ALL") {
         transactionsData = transactionsData.filter(t => t.type === filterType);
+      }
+      if (filterCategory) {
+        // Filter transactions by category
+        transactionsData = transactionsData.filter(t => t.item?.category?._id === filterCategory);
       }
       setTransactions(transactionsData);
       setError("");
@@ -59,14 +72,26 @@ export default function Stock() {
     }
   };
 
+  // Update filtered items when category or items change
+  useEffect(() => {
+    if (selectedCategory) {
+      const filtered = items.filter(item => item.category?._id === selectedCategory);
+      setFilteredItemsByCategory(filtered);
+    } else {
+      setFilteredItemsByCategory([]);
+    }
+    // Reset selected item when category changes
+    setForm(prev => ({ ...prev, item: "" }));
+  }, [selectedCategory, items]);
+
   useEffect(() => {
     fetchData();
-  }, [filterItem, filterType]);
+  }, [filterItem, filterType, filterCategory]);
 
   // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterItem, filterType]);
+  }, [filterItem, filterType, filterCategory]);
 
   // Pagination
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -77,9 +102,12 @@ export default function Stock() {
   const resetFilters = () => {
     setFilterItem("");
     setFilterType("ALL");
+    setFilterCategory("");
   };
 
   const resetForm = () => {
+    setSelectedCategory("");
+    setFilteredItemsByCategory([]);
     setForm({
       item: "",
       type: "IN",
@@ -153,6 +181,10 @@ export default function Stock() {
   };
 
   const handleEdit = (transaction) => {
+    const itemCategory = transaction.item?.category?._id;
+    if (itemCategory) {
+      setSelectedCategory(itemCategory);
+    }
     setForm({
       item: transaction.item?._id,
       type: transaction.type,
@@ -189,6 +221,10 @@ export default function Stock() {
   const getCurrentStock = (itemId) => {
     const item = items.find(i => i._id === itemId);
     return item?.currentQuantity || 0;
+  };
+
+  const getItemDetails = (itemId) => {
+    return items.find(i => i._id === itemId);
   };
 
   const getSummaryStats = () => {
@@ -323,26 +359,48 @@ export default function Stock() {
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Filters - Updated with Category Filter */}
       <div className="bg-white rounded-xl shadow-lg p-4">
-        <div className="flex flex-col md:flex-row gap-3">
-          <div className="flex-1">
-            <label className="block text-xs font-semibold text-slate-500 mb-1">🔍 Filter by Item</label>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 mb-1">📁 Filter by Category</label>
             <select
-              value={filterItem}
-              onChange={(e) => setFilterItem(e.target.value)}
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all outline-none"
             >
-              <option value="">📦 All Items</option>
-              {items.map((i) => (
-                <option key={i._id} value={i._id}>
-                  {i.name} (Stock: {getCurrentStock(i._id)} {i.unit})
+              <option value="">📂 All Categories</option>
+              {categories.map((cat) => (
+                <option key={cat._id} value={cat._id}>
+                  {cat.icon} {cat.name}
                 </option>
               ))}
             </select>
           </div>
           
-          <div className="w-full md:w-64">
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 mb-1">🔍 Filter by Item</label>
+            <select
+              value={filterItem}
+              onChange={(e) => setFilterItem(e.target.value)}
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all outline-none"
+              disabled={!filterCategory}
+            >
+              <option value="">📦 All Items</option>
+              {items
+                .filter(item => !filterCategory || item.category?._id === filterCategory)
+                .map((i) => (
+                  <option key={i._id} value={i._id}>
+                    {i.name} (Stock: {getCurrentStock(i._id)} {i.unit})
+                  </option>
+                ))}
+            </select>
+            {!filterCategory && (
+              <p className="text-xs text-amber-500 mt-1">⚠️ Select a category first to filter items</p>
+            )}
+          </div>
+          
+          <div>
             <label className="block text-xs font-semibold text-slate-500 mb-1">🏷️ Filter by Type</label>
             <select
               value={filterType}
@@ -356,18 +414,18 @@ export default function Stock() {
               <option value="RETURN">🔄 Return</option>
             </select>
           </div>
-          
-          {(filterItem || filterType !== "ALL") && (
-            <div className="flex items-end">
-              <button
-                onClick={resetFilters}
-                className="px-3 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm hover:bg-slate-200 transition-all"
-              >
-                Clear Filters ✕
-              </button>
-            </div>
-          )}
         </div>
+        
+        {(filterCategory || filterItem || filterType !== "ALL") && (
+          <div className="flex justify-end mt-3 pt-3 border-t border-slate-100">
+            <button
+              onClick={resetFilters}
+              className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-sm hover:bg-slate-200 transition-all flex items-center gap-1"
+            >
+              ✕ Clear All Filters
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Results Count */}
@@ -404,6 +462,7 @@ export default function Stock() {
               <thead className="bg-gradient-to-r from-slate-50 to-slate-100">
                 <tr>
                   <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600">📅 Date</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600">📁 Category</th>
                   <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600">📦 Item</th>
                   <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600">🏷️ Type</th>
                   <th className="px-3 py-2 text-right text-xs font-semibold text-slate-600">🔢 Qty</th>
@@ -420,8 +479,15 @@ export default function Stock() {
                       📅 {new Date(t.date).toLocaleDateString()}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap">
-                      <span className="font-medium text-slate-800 text-sm">{t.item?.name}</span>
-                      <span className="text-xs text-slate-400 ml-1">({t.item?.unit})</span>
+                      <span className="inline-flex items-center gap-1 text-xs">
+                        {t.item?.category?.icon || "📦"} {t.item?.category?.name || "-"}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap">
+                      <div className="flex flex-col">
+                        <span className="font-medium text-slate-800 text-sm">{t.item?.name}</span>
+                        <span className="text-xs text-slate-400">{t.item?.location} • {t.item?.unit}</span>
+                      </div>
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap">
                       <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-medium ${getTransactionColor(t.type)}`}>
@@ -429,20 +495,20 @@ export default function Stock() {
                       </span>
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-right font-semibold text-slate-700">
-                      {t.quantity} {t.item?.unit}
+                      {t.quantity}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-slate-600 text-xs">
-                       {t.borrowerName || "-"}
+                      {t.borrowerName || "-"}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap">
                       {t.purpose ? (
                         <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-600">
-                           {t.purpose}
+                          🎯 {t.purpose}
                         </span>
                       ) : "-"}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-slate-400 text-xs">
-                       {t.reference || "-"}
+                      {t.reference || "-"}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-center">
                       <div className="flex items-center justify-center gap-1">
@@ -513,7 +579,7 @@ export default function Stock() {
         </div>
       )}
 
-      {/* Transaction Form Modal */}
+      {/* Transaction Form Modal - UPDATED with Category-First Selection */}
       {showForm && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto" onClick={() => setShowForm(false)}>
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-md my-8" onClick={(e) => e.stopPropagation()}>
@@ -530,24 +596,90 @@ export default function Stock() {
             </div>
             
             <form onSubmit={handleSubmit} className="p-5 space-y-4">
+              {/* Step 1: Select Category */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">📦 Item *</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  📁 Step 1: Select Category *
+                </label>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all outline-none"
+                  disabled={!!editingId}
+                  required
+                >
+                  <option value="">-- Choose a category --</option>
+                  {categories.map((cat) => (
+                    <option key={cat._id} value={cat._id}>
+                      {cat.icon} {cat.name}
+                    </option>
+                  ))}
+                </select>
+                {!selectedCategory && !editingId && (
+                  <p className="text-xs text-amber-500 mt-1">⚠️ Select a category first to see its items</p>
+                )}
+              </div>
+
+              {/* Step 2: Select Item from Category */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  📦 Step 2: Select Item *
+                </label>
                 <select
                   value={form.item}
                   onChange={(e) => setForm({ ...form, item: e.target.value })}
                   className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all outline-none"
                   required
-                  disabled={!!editingId}
+                  disabled={!!editingId || !selectedCategory}
                 >
-                  <option value="">Select Item</option>
-                  {items.map((i) => (
+                  <option value="">-- Select an item --</option>
+                  {filteredItemsByCategory.map((i) => (
                     <option key={i._id} value={i._id}>
-                      {i.name} ({i.unit}) - Available: {getCurrentStock(i._id)}
+                      {i.name} (Stock: {getCurrentStock(i._id)} {i.unit} | Location: {i.location})
                     </option>
                   ))}
                 </select>
+                {selectedCategory && filteredItemsByCategory.length === 0 && !editingId && (
+                  <p className="text-xs text-rose-500 mt-1">❌ No items found in this category. Please add items first.</p>
+                )}
                 {editingId && <p className="text-xs text-slate-400 mt-1">Item cannot be changed when editing</p>}
               </div>
+
+              {/* Selected Item Preview Card */}
+              {form.item && !editingId && (
+                <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-3 border border-indigo-100">
+                  <p className="text-xs font-semibold text-indigo-600 mb-2">📋 Selected Item Details</p>
+                  {(() => {
+                    const selectedItem = getItemDetails(form.item);
+                    return selectedItem ? (
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Name:</span>
+                          <span className="font-medium text-slate-700">{selectedItem.name}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Category:</span>
+                          <span>{selectedItem.category?.icon} {selectedItem.category?.name}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Current Stock:</span>
+                          <span className="font-bold text-emerald-600">{getCurrentStock(form.item)} {selectedItem.unit}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Location:</span>
+                          <span>{selectedItem.location}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Condition:</span>
+                          <span>{selectedItem.condition}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-slate-500">Loading details...</p>
+                    );
+                  })()}
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">🏷️ Transaction Type *</label>
@@ -701,11 +833,11 @@ export default function Stock() {
               {/* Preview Card */}
               {form.item && form.quantity && (
                 <div className={`bg-gradient-to-r ${getTransactionGradient(form.type)} rounded-lg p-3 text-white`}>
-                  <p className="text-xs font-semibold opacity-90 uppercase mb-2">Preview</p>
+                  <p className="text-xs font-semibold opacity-90 uppercase mb-2">📊 Preview</p>
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-semibold text-sm">
-                        {items.find(i => i._id === form.item)?.name || "Selected Item"}
+                        {getItemDetails(form.item)?.name || "Selected Item"}
                       </p>
                       <p className="text-xs opacity-90">
                         {form.quantity} units • {form.type}
@@ -724,8 +856,8 @@ export default function Stock() {
               <div className="flex gap-3 pt-2">
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-4 py-2 rounded-lg font-semibold hover:shadow-lg transition-all text-sm disabled:opacity-50 flex items-center justify-center gap-2"
+                  disabled={loading || !selectedCategory || !form.item}
+                  className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-4 py-2 rounded-lg font-semibold hover:shadow-lg transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   💾 {loading ? "Processing..." : (editingId ? "Update" : "Add") + " Transaction"}
                 </button>
