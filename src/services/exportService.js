@@ -15,10 +15,58 @@ const safe = (v) => {
 
 const fmtDate = () => {
   const d = new Date();
-  return `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}`;
+  return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
 };
 
-// Export to PDF for items (WITHOUT autoTable issues)
+// Generic PDF Export (for any data)
+export const exportToPDF = (data, columns, title, filename) => {
+  if (!data || data.length === 0) {
+    alert("No data to export");
+    return;
+  }
+
+  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+
+  // Header
+  doc.setFillColor(15, 23, 42);
+  doc.rect(0, 0, pageW, 20, "F");
+  doc.setFontSize(14);
+  doc.setTextColor(255, 255, 255);
+  doc.text(safe(title), 14, 12);
+  doc.setFontSize(8);
+  doc.setTextColor(200, 200, 200);
+  doc.text(fmtDate(), pageW - 14, 12, { align: "right" });
+
+  // Table
+  const tableBody = data.map(row => columns.map(col => safe(row[col.key])));
+  
+  autoTable(doc, {
+    head: [columns.map(col => col.label)],
+    body: tableBody,
+    startY: 25,
+    margin: { left: 10, right: 10 },
+    theme: "striped",
+    headStyles: { fillColor: [79, 70, 229], textColor: [255, 255, 255], fontSize: 8, fontStyle: "bold" },
+    bodyStyles: { fontSize: 7 },
+    alternateRowStyles: { fillColor: [241, 245, 249] }
+  });
+
+  // Footer
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(7);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`Page ${i} of ${pageCount}`, pageW - 14, pageH - 8, { align: "right" });
+    doc.text("Confidential - G.S AGATEKO", 14, pageH - 8);
+  }
+
+  doc.save(`${filename}.pdf`);
+};
+
+// Items PDF Export (rich report with categories)
 export const exportItemsToPDF = (items) => {
   if (!items || items.length === 0) {
     alert("No items to export");
@@ -92,7 +140,19 @@ export const exportToExcel = (data, columns, filename) => {
   
   const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Items");
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Data");
+  
+  // Auto-size columns
+  const maxWidth = columns.map((_, idx) => {
+    let max = columns[idx].label.length;
+    data.forEach((row) => {
+      const val = String(row[columns[idx].key] || "-").length;
+      if (val > max) max = val;
+    });
+    return { wch: Math.min(max + 2, 30) };
+  });
+  worksheet["!cols"] = maxWidth;
+  
   XLSX.writeFile(workbook, `${filename}.xlsx`);
 };
 
@@ -103,17 +163,18 @@ export const exportToCSV = (data, columns, filename) => {
     return;
   }
 
-  const headers = columns.map(col => col.label).join(",");
+  const headers = columns.map(col => `"${col.label}"`).join(",");
   const rows = data.map(row => 
     columns.map(col => {
       let val = row[col.key] !== undefined && row[col.key] !== null ? row[col.key] : "-";
-      if (typeof val === "string" && (val.includes(",") || val.includes('"'))) {
+      val = String(val);
+      if (val.includes(",") || val.includes('"')) {
         val = `"${val.replace(/"/g, '""')}"`;
       }
       return val;
     }).join(",")
   );
   
-  const blob = new Blob([headers, ...rows].join("\n"), { type: "text/csv;charset=utf-8;" });
+  const blob = new Blob(["\uFEFF" + [headers, ...rows].join("\n")], { type: "text/csv;charset=utf-8;" });
   saveAs(blob, `${filename}.csv`);
 };

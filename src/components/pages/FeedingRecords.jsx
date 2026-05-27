@@ -162,31 +162,31 @@ export default function FeedingRecords() {
     };
 
     const exportReportToPDF = () => {
-        if (!reportData) return;
-        const reportColumns = [
-            { key: "itemName", label: "Item Name" },
-            { key: "unit", label: "Unit" },
-            { key: "totalReceived", label: "Total Received" },
-            { key: "totalUsed", label: "Total Used" },
-        ];
-        const reportTitle = `${reportType.toUpperCase()} Feeding Report\nPeriod: ${formatDisplayDate(dateRange.startDate)} - ${formatDisplayDate(dateRange.endDate)}`;
-        exportToPDF(reportData.records, reportColumns, reportTitle, `feeding_report_${reportType}_${Date.now()}`);
-        setSuccess("PDF exported successfully!");
-        setTimeout(() => setSuccess(""), 3000);
-    };
+  if (!reportData) return;
+  const reportColumns = [
+    { key: "itemName", label: "Item Name" },
+    { key: "unit", label: "Unit" },
+    { key: "totalReceived", label: "Total Received" },
+    { key: "totalUsed", label: "Total Used" },
+  ];
+  const reportTitle = `${reportType.toUpperCase()} Feeding Report - ${formatDisplayDate(dateRange.startDate)} to ${formatDisplayDate(dateRange.endDate)}`;
+  exportToPDF(reportData.records, reportColumns, reportTitle, `feeding_report_${reportType}_${Date.now()}`);
+  setSuccess("PDF exported successfully!");
+  setTimeout(() => setSuccess(""), 3000);
+};
 
-    const exportReportToExcel = () => {
-        if (!reportData) return;
-        const reportColumns = [
-            { key: "itemName", label: "Item Name" },
-            { key: "unit", label: "Unit" },
-            { key: "totalReceived", label: "Total Received" },
-            { key: "totalUsed", label: "Total Used" },
-        ];
-        exportToExcel(reportData.records, reportColumns, `feeding_report_${reportType}_${Date.now()}`);
-        setSuccess("Excel exported successfully!");
-        setTimeout(() => setSuccess(""), 3000);
-    };
+const exportReportToExcel = () => {
+  if (!reportData) return;
+  const reportColumns = [
+    { key: "itemName", label: "Item Name" },
+    { key: "unit", label: "Unit" },
+    { key: "totalReceived", label: "Total Received" },
+    { key: "totalUsed", label: "Total Used" },
+  ];
+  exportToExcel(reportData.records, reportColumns, `feeding_report_${reportType}_${Date.now()}`);
+  setSuccess("Excel exported successfully!");
+  setTimeout(() => setSuccess(""), 3000);
+};
 
     const resetForm = () => {
         setForm({
