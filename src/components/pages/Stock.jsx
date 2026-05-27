@@ -543,8 +543,8 @@ export default function Stock() {
                         <div className="flex flex-col">
                           <span className="font-semibold text-slate-800 text-sm">{t.item?.name}</span>
                           <div className="flex items-center gap-2 text-xs text-slate-400">
-                            <span>📍 {t.item?.location || "-"}</span>
-                            <span>📏 {t.item?.unit || "-"}</span>
+                            <span>{t.item?.location || "-"}</span>
+                            <span>{t.item?.unit || "-"}</span>
                           </div>
                         </div>
                       </td>
@@ -763,7 +763,7 @@ export default function Stock() {
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-500 text-sm">📍 Location</span>
+                    <span className="text-slate-500 text-sm">Location</span>
                     <span className="text-slate-700 text-sm">{selectedTransaction.item?.location || "-"}</span>
                   </div>
                   <div className="flex justify-between items-center">
@@ -1089,7 +1089,7 @@ export default function Stock() {
                   <option value="Classroom">📚 Classroom Use</option>
                   <option value="Laboratory">🔬 Laboratory</option>
                   <option value="Cleaning">🧹 Cleaning</option>
-                  <option value="Maintenance">🔧 Maintenance</option>
+                  <option value="Maintenance"> Maintenance</option>
                   <option value="Event">🎉 Event</option>
                 </select>
               </div>
