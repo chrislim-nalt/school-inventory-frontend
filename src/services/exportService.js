@@ -61,7 +61,7 @@ export const exportToPDF = (data, columns, title, filename) => {
     doc.setFontSize(7);
     doc.setTextColor(100, 116, 139);
     doc.text(`Page ${i} of ${pageCount}`, pageW - 14, pageH - 8, { align: "right" });
-    doc.text("Confidential - G.S AGATEKO", 14, pageH - 8);
+    doc.text("Confidential - School Inventory", 14, pageH - 8);
   }
 
   doc.save(`${filename}.pdf`);
@@ -83,7 +83,7 @@ export const exportItemsToPDF = (items) => {
   doc.rect(0, 0, pageW, 20, "F");
   doc.setFontSize(14);
   doc.setTextColor(255, 255, 255);
-  doc.text("G.S AGATEKO - Items Report", 14, 12);
+  doc.text("School Inventory - Items Report", 14, 12);
   doc.setFontSize(8);
   doc.setTextColor(200, 200, 200);
   doc.text(fmtDate(), pageW - 14, 12, { align: "right" });
@@ -121,7 +121,7 @@ export const exportItemsToPDF = (items) => {
     doc.setFontSize(7);
     doc.setTextColor(100, 116, 139);
     doc.text(`Page ${i} of ${pageCount}`, pageW - 14, pageH - 8, { align: "right" });
-    doc.text("Confidential - G.S AGATEKO", 14, pageH - 8);
+    doc.text("Confidential - School Inventory", 14, pageH - 8);
   }
 
   doc.save(`Items_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
