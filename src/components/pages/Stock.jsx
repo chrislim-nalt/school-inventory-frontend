@@ -7,6 +7,7 @@ import {
   updateTransaction,
   deleteTransaction,
 } from "../services/stockService";
+import DownloadButton from "../DownloadButton";
 
 export default function Stock() {
   const [items, setItems] = useState([]);
@@ -313,6 +314,45 @@ export default function Stock() {
     return { text: `Due in ${daysLeft} days`, color: "bg-emerald-500 text-white" };
   };
 
+  // Prepare export data for transactions
+  const exportData = transactions.map(transaction => ({
+    date: new Date(transaction.date).toLocaleDateString('en-GB'),
+    time: new Date(transaction.date).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+    category: transaction.item?.category?.name || "-",
+    itemName: transaction.item?.name || "-",
+    location: transaction.item?.location || "-",
+    type: transaction.type === "IN" ? "Stock IN" : 
+           transaction.type === "OUT" ? "Stock OUT" : 
+           transaction.type === "BORROW" ? "Borrowed" : "Returned",
+    quantity: transaction.quantity,
+    unit: transaction.item?.unit || "-",
+    description: getTransactionDescription(transaction),
+    borrowerName: transaction.borrowerName || "-",
+    borrowerDepartment: transaction.borrowerDepartment || "-",
+    expectedReturnDate: transaction.expectedReturnDate ? new Date(transaction.expectedReturnDate).toLocaleDateString('en-GB') : "-",
+    purpose: transaction.purpose || "-",
+    reference: transaction.reference || "-",
+    performedBy: transaction.performedBy || "System"
+  }));
+
+  const exportColumns = [
+    { key: "date", label: "Date" },
+    { key: "time", label: "Time" },
+    { key: "category", label: "Category" },
+    { key: "itemName", label: "Item Name" },
+    { key: "location", label: "Location" },
+    { key: "type", label: "Transaction Type" },
+    { key: "quantity", label: "Quantity" },
+    { key: "unit", label: "Unit" },
+    { key: "description", label: "Description" },
+    { key: "borrowerName", label: "Borrower Name" },
+    { key: "borrowerDepartment", label: "Department" },
+    { key: "expectedReturnDate", label: "Expected Return Date" },
+    { key: "purpose", label: "Purpose" },
+    { key: "reference", label: "Reference" },
+    { key: "performedBy", label: "Performed By" }
+  ];
+
   const getPageNumbers = () => {
     const pages = [];
     const maxVisible = 5;
@@ -405,6 +445,29 @@ export default function Stock() {
           </div>
         </div>
       </div>
+
+      {/* Export Section */}
+      {transactions.length > 0 && (
+        <div className="bg-white rounded-xl shadow-lg p-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div>
+              <h3 className="font-semibold text-slate-800 text-sm flex items-center gap-2">
+                <span>📥</span> Export Transactions
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Export filtered transactions to PDF, Excel, or CSV
+              </p>
+            </div>
+            <DownloadButton
+              data={exportData}
+              columns={exportColumns}
+              title="G.S AGATEKO - Stock Transactions Report"
+              filename={`stock_transactions_${new Date().toISOString().slice(0, 10)}`}
+              variant="primary"
+            />
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="bg-white rounded-xl shadow-lg p-4">
@@ -543,8 +606,8 @@ export default function Stock() {
                         <div className="flex flex-col">
                           <span className="font-semibold text-slate-800 text-sm">{t.item?.name}</span>
                           <div className="flex items-center gap-2 text-xs text-slate-400">
-                            <span>{t.item?.location || "-"}</span>
-                            <span>{t.item?.unit || "-"}</span>
+                            <span>📍 {t.item?.location || "-"}</span>
+                            <span>📏 {t.item?.unit || "-"}</span>
                           </div>
                         </div>
                       </td>
@@ -763,7 +826,7 @@ export default function Stock() {
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-500 text-sm">Location</span>
+                    <span className="text-slate-500 text-sm">📍 Location</span>
                     <span className="text-slate-700 text-sm">{selectedTransaction.item?.location || "-"}</span>
                   </div>
                   <div className="flex justify-between items-center">
@@ -810,7 +873,7 @@ export default function Stock() {
               )}
 
               {/* Additional Information */}
-              {(selectedTransaction.purpose || selectedTransaction.reference || selectedTransaction.notes) && (
+              {(selectedTransaction.purpose || selectedTransaction.reference) && (
                 <div className="bg-slate-50 rounded-lg p-3">
                   <p className="text-xs font-semibold text-slate-500 uppercase mb-2">Additional Information</p>
                   <div className="space-y-2">
@@ -1089,7 +1152,7 @@ export default function Stock() {
                   <option value="Classroom">📚 Classroom Use</option>
                   <option value="Laboratory">🔬 Laboratory</option>
                   <option value="Cleaning">🧹 Cleaning</option>
-                  <option value="Maintenance"> Maintenance</option>
+                  <option value="Maintenance">🔧 Maintenance</option>
                   <option value="Event">🎉 Event</option>
                 </select>
               </div>

@@ -385,7 +385,7 @@ export default function Items() {
                 data={exportData}
                 items={items}
                 columns={exportColumns}
-                title="G.S AGATEKO - Complete Items Report"
+                title="School Inventory - Complete Items Report"
                 filename="all_items_export"
                 variant="primary"
                 useItemsPDF={true}

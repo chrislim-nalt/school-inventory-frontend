@@ -364,7 +364,7 @@ export default function TrackedAssets() {
                   { key: "location", label: "Location" },
                   { key: "added", label: "Date Added" }
                 ]}
-                title="G.S AGATEKO - Tracked Assets Report"
+                title="School Inventory - Tracked Assets Report"
                 filename="tracked_assets_export"
                 variant="primary"
               />

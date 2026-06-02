@@ -386,7 +386,7 @@ export default function CleaningSupplies() {
             <DownloadButton
               data={exportData}
               columns={exportColumns}
-              title="G.S AGATEKO - Cleaning Supplies Report"
+              title="School Inventory - Cleaning Supplies Report"
               filename="cleaning_supplies_export"
               variant="primary"
             />

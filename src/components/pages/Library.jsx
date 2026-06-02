@@ -421,7 +421,7 @@ export default function Library() {
             <DownloadButton
               data={exportData}
               columns={exportColumns}
-              title="G.S AGATEKO - Library Collection Report"
+              title="School Inventory - Library Collection Report"
               filename="library_books_export"
               variant="primary"
             />

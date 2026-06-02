@@ -411,7 +411,7 @@ export default function Laboratory() {
             <DownloadButton
               data={exportData}
               columns={exportColumns}
-              title="G.S AGATEKO - Laboratory Items Report"
+              title="School Inventory - Laboratory Items Report"
               filename="laboratory_items_export"
               variant="primary"
             />

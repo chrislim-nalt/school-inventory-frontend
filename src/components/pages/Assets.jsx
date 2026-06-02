@@ -373,7 +373,7 @@ export default function Assets() {
             <DownloadButton
               data={exportData}
               columns={exportColumns}
-              title="G.S AGATEKO - Assets Report"
+              title="School Inventory - Assets Report"
               filename="assets_export"
               variant="primary"
             />
